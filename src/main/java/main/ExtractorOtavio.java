@@ -57,17 +57,17 @@ import modelo.Revision;
 
 public class ExtractorOtavio {
 
+	static String caminhoGit = "pathToGit";
 	static String caminhoRespostas = "pathToFile.xlsx";
 	static String caminhoSaida = "pathToFileOut.xlsx";
-
+	
 	private static String[] columns = {"Nome", "Email", "Arquivo", "Familiaridade", 
 			"Data", "Adds", "Dels", "Mods", "Cond", "Montante","DataUltima", "NumCommits","QuantDias", 
 			"NumDevs", "Blame", "TotalLinhas", "PrimeiroAutor", "DOA", "Mantenedor", "QuantArquivos", "DiasEntreCommits"};
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException {
-		String pathCompleto = null;
 		if (args != null && args[0] != null) {
-			pathCompleto = args[0];
+			caminhoGit = args[0];
 		}
 		if (args != null && args[1] != null) {
 			caminhoRespostas = args[1];
@@ -96,7 +96,7 @@ public class ExtractorOtavio {
 			fila.add(modelo);
 		}
 		System.out.println("====== Analisando projeto =======");
-		git = Git.open(new File(pathCompleto));
+		git = Git.open(new File(caminhoGit));
 		repository = git.getRepository();
 		List<Revision> commits = getRevisions(projetoArquivos, git, repository);
 		//					emailsArquivo(commits);
@@ -438,7 +438,7 @@ public class ExtractorOtavio {
 						data = cell.getDateCellValue();
 					}
 				}
-				if (!projetoArquivos.contains(arquivo)) {
+				if (arquivo != null && projetoArquivos.contains(arquivo) == false) {
 					projetoArquivos.add(arquivo);
 				}
 				if (email != null && nome != null && arquivo != null && data != null && projeto != null) {
