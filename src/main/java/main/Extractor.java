@@ -55,7 +55,7 @@ import modelo.OperationType;
 import modelo.Revision;
 
 
-public class ExtractorOtavio {
+public class Extractor {
 
 	static String caminhoGit = "pathToGit";
 	static String caminhoRespostas = "pathToFile.xlsx";
@@ -413,7 +413,7 @@ public class ExtractorOtavio {
 			Row row = rowIterator.next();
 			while (rowIterator.hasNext()) {
 				row = rowIterator.next();
-				String projeto = null, email = null, nome = null, arquivo = null;
+				String email = null, nome = null, arquivo = null;
 				Date data = null;
 				int familiaridade = -1;
 				Iterator<Cell> cellIterator = row.cellIterator();
@@ -429,20 +429,17 @@ public class ExtractorOtavio {
 						arquivo = cell.getStringCellValue();
 					}
 					if (cell.getColumnIndex() == 3) {
-						projeto = cell.getStringCellValue();
-					}
-					if (cell.getColumnIndex() == 4) {
 						familiaridade = (int) cell.getNumericCellValue();
 					}
-					if (cell.getColumnIndex() == 5) {
+					if (cell.getColumnIndex() == 4) {
 						data = cell.getDateCellValue();
 					}
 				}
 				if (arquivo != null && projetoArquivos.contains(arquivo) == false) {
 					projetoArquivos.add(arquivo);
 				}
-				if (email != null && nome != null && arquivo != null && data != null && projeto != null) {
-					ModeloOtavio modeloOtavio = new ModeloOtavio(email, nome, arquivo, data, projeto, familiaridade);
+				if (email != null && nome != null && arquivo != null && data != null) {
+					ModeloOtavio modeloOtavio = new ModeloOtavio(email, nome, arquivo, data, familiaridade);
 					lista.add(modeloOtavio);
 				}
 			}
@@ -572,7 +569,7 @@ public class ExtractorOtavio {
 			}
 			total++;
 		}
-		ExtractorOtavio extractorOtavio = new ExtractorOtavio();
+		Extractor extractorOtavio = new Extractor();
 		BlameTotal blameTotal = extractorOtavio.new BlameTotal(blame, total);
 		return blameTotal;
 	}

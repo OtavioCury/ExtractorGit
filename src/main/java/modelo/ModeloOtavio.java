@@ -7,7 +7,6 @@ public class ModeloOtavio {
 	private String email;
 	private String nome;
 	private String arquivo;
-	private String projeto;
 	private int familiaridade;
 	private Date data;
 	/**
@@ -15,13 +14,12 @@ public class ModeloOtavio {
 	 * @param nome
 	 * @param arquivo
 	 */
-	public ModeloOtavio(String email, String nome, String arquivo, Date data, String projeto, int familiaridade) {
+	public ModeloOtavio(String email, String nome, String arquivo, Date data, int familiaridade) {
 		super();
 		this.email = email;
 		this.nome = nome;
 		this.arquivo = arquivo;
 		this.setData(data);
-		this.setProjeto(projeto);
 		this.familiaridade = familiaridade;
 	}
 	public String getEmail() {
@@ -47,12 +45,6 @@ public class ModeloOtavio {
 	}
 	public void setData(Date data) {
 		this.data = data;
-	}
-	public String getProjeto() {
-		return projeto;
-	}
-	public void setProjeto(String projeto) {
-		this.projeto = projeto;
 	}
 	public int getFamiliaridade() {
 		return familiaridade;
