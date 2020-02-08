@@ -97,7 +97,6 @@ public class Extractor {
 			List<ModeloOtavio> lista = new ArrayList<ModeloOtavio>();
 			projetoAnalisado(lista, projetoArquivos);
 			
-			System.out.println("====== Analisando projeto =======");
 			JSONArray arrayGit = jsonObject.getJSONArray("repos");
 			List<String> stringGit = new ArrayList<String>();
 			for (Object object : arrayGit) {

@@ -10,16 +10,14 @@ import org.json.JSONObject;
 
 public class TesteExtractor {
 	public static void main(String[] args) {
-		String basePath1 = "Teste";
-		String basePath2 = "Teste";
-		String answerFile1 = "Teste";
-		String answerFile2 = "Teste";
+		String basePath1 = "/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/fastlane.xlsx";
+		String basePath2 = "/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/activeadmin.xlsx";
+		String answerFile1 = "/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/codivision1.xlsx";
+		String answerFile2 = "/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/codivision2.xlsx";
 		List<String> repos1 = new ArrayList<String>();
-		repos1.add("Teste1");
-		repos1.add("Teste2");
+		repos1.add("/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/fastlane/fastlane/.git");
 		List<String> repos2 = new ArrayList<String>();
-		repos2.add("Teste1");
-		repos2.add("Teste2");
+		repos2.add("/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/activeadmin/activeadmin/.git");
 		JSONObject jsonObjectCHA = new JSONObject();
 		JSONObject jsonObjectRMCA = new JSONObject();
 		JSONObject jsonObjectProject = new JSONObject();
