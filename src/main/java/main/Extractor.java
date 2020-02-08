@@ -5,16 +5,12 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 
@@ -45,6 +41,8 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 import modelo.Author;
 import modelo.Constants;
@@ -66,129 +64,157 @@ public class Extractor {
 			"NumDevs", "Blame", "TotalLinhas", "PrimeiroAutor", "DOA", "Mantenedor", "QuantArquivos", "DiasEntreCommits"};
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException {
+		
+		JSONObject objetoJson = null;
 		if (args != null && args[0] != null) {
-			caminhoGit = args[0];
+			objetoJson = new JSONObject(args[0]);
 		}
-		if (args != null && args[1] != null) {
-			caminhoRespostas = args[1];
-		}
-		if (args != null && args[2] != null) {
-			caminhoSaida = args[2];
-		}
-		Git git;
-		Repository repository;
-		Instant start = Instant.now();
-		Workbook workbook = new XSSFWorkbook();
-		Sheet sheet = workbook.createSheet("codiVision");
-		Row headerRow = sheet.createRow(0);
-		for(int i = 0; i < columns.length; i++) {
-			Cell cell = headerRow.createCell(i);
-			cell.setCellValue(columns[i]);
-		}
-
-		List<String> projetoArquivos = new ArrayList<String>();
-		List<ModeloOtavio> lista = new ArrayList<ModeloOtavio>();
-		projetoAnalisado(lista, projetoArquivos);
+		
+		JSONObject projetos = (JSONObject) objetoJson.get("projects");
+		JSONObject cha = (JSONObject) projetos.get("CHA");
+		JSONObject rmca = (JSONObject) projetos.get("RMCA");
+		List<JSONObject> projetosArray = new ArrayList<JSONObject>();
+		projetosArray.add(cha);
+		projetosArray.add(rmca);
+		
 		SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
-		int rowNum = 1;
-		Queue<ModeloOtavio> fila = new LinkedList<ModeloOtavio>();
-		for(ModeloOtavio modelo : lista) {
-			fila.add(modelo);
-		}
-		System.out.println("====== Analisando projeto =======");
-		git = Git.open(new File(caminhoGit));
-		repository = git.getRepository();
-		List<Revision> commits = getRevisions(projetoArquivos, git, repository);
-		//					emailsArquivo(commits);
-		while (!fila.isEmpty()) {
-			ModeloOtavio modelo = fila.poll();
-			Date dataUltima = null;
-			Row row = sheet.createRow(rowNum++);
-			int adds = -1;
-			int dels = -1;
-			int mods = -1;
-			int conds = -1;
-			int numDevs = -1;
-			int montante = -1;
-			int numCommits = -1;
-			int diffDias = -1;
-			int avgCommits = -1;
-			int numeroArquivos = numeroOtherFile(commits, modelo.getEmail(), modelo.getNome());
-			double doa = -1.0;
-			boolean primeiroAutor = false;
-			BlameTotal blameTotal = null;
-			if (commits != null) {
-				blameTotal = blameTotal(modelo.getNome(), modelo.getArquivo(), repository);
-				dataUltima = lastModify(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-				adds = somaAdd(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-				dels = somaDel(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-				mods = somaMod(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-				conds = somaCond(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-				montante = somaMontante(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-				numCommits = numCommits(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-				avgCommits = avgDaysCommits(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome(), numCommits);
-				numDevs = numberModsDevelopers(commits, modelo.getEmail(), modelo.getArquivo(), dataUltima, modelo.getNome());
-				primeiroAutor = primeiroAutor(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-				doa = calculaDoa(numCommits, numDevs, primeiroAutor);
+		
+		for (JSONObject jsonObject : projetosArray) {
+			
+			Workbook workbook = new XSSFWorkbook();
+			Sheet sheet = workbook.createSheet("codiVision");
+			Row headerRow = sheet.createRow(0);
+			for(int i = 0; i < columns.length; i++) {
+				Cell cell = headerRow.createCell(i);
+				cell.setCellValue(columns[i]);
 			}
-			row.createCell(0).setCellValue(modelo.getNome());
-			row.createCell(1).setCellValue(modelo.getEmail());
-			row.createCell(2).setCellValue(modelo.getArquivo());
-			row.createCell(3).setCellValue(modelo.getFamiliaridade());
-			row.createCell(4).setCellValue(formato.format(modelo.getData()));
-			row.createCell(5).setCellValue(adds);
-			row.createCell(6).setCellValue(dels);
-			row.createCell(7).setCellValue(mods);
-			row.createCell(8).setCellValue(conds);
-			row.createCell(9).setCellValue(montante);
-			if (dataUltima != null) { 
-				String dataFormatada = formato.format(dataUltima);
-				row.createCell(10).setCellValue(dataFormatada);
-				long diff = modelo.getData().getTime() - dataUltima.getTime();
-				diffDias = (int) TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
-			}else {
-				row.createCell(10).setCellValue(dataUltima);
+			int rowNum = 1;
+			
+			caminhoRespostas = jsonObject.getString("base_path");
+			caminhoSaida = jsonObject.getString("answer_file");
+			
+			List<String> projetoArquivos = new ArrayList<String>();
+			List<ModeloOtavio> lista = new ArrayList<ModeloOtavio>();
+			projetoAnalisado(lista, projetoArquivos);
+			
+			System.out.println("====== Analisando projeto =======");
+			JSONArray arrayGit = jsonObject.getJSONArray("repos");
+			List<String> stringGit = new ArrayList<String>();
+			for (Object object : arrayGit) {
+				stringGit.add(object.toString());
 			}
-			row.createCell(11).setCellValue(numCommits);
-			row.createCell(12).setCellValue(diffDias);
-			row.createCell(13).setCellValue(numDevs);
-			if (blameTotal != null) {
-				row.createCell(14).setCellValue(blameTotal.blame);
-				row.createCell(15).setCellValue(blameTotal.total);
-			}else {
-				row.createCell(14).setCellValue(-1);
-				row.createCell(15).setCellValue(-1);
+			for (String string : stringGit) {
+				Git git;
+				Repository repository;
+				git = Git.open(new File(string));
+				repository = git.getRepository();
+				List<Revision> commits = getRevisions(projetoArquivos, git, repository);
+				List<ModeloOtavio> listaRepository = filesRepo(lista, projetoArquivos, commits);
+				for (ModeloOtavio modelo : listaRepository) {
+					Date dataUltima = null;
+					Row row = sheet.createRow(rowNum++);
+					int adds = -1;
+					int dels = -1;
+					int mods = -1;
+					int conds = -1;
+					int numDevs = -1;
+					int montante = -1;
+					int numCommits = -1;
+					int diffDias = -1;
+					int avgCommits = -1;
+					int numeroArquivos = numeroOtherFile(commits, modelo.getEmail(), modelo.getNome());
+					double doa = -1.0;
+					boolean primeiroAutor = false;
+					BlameTotal blameTotal = null;
+					if (commits != null) {
+						blameTotal = blameTotal(modelo.getNome(), modelo.getArquivo(), repository);
+						dataUltima = lastModify(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
+						adds = somaAdd(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
+						dels = somaDel(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
+						mods = somaMod(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
+						conds = somaCond(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
+						montante = somaMontante(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
+						numCommits = numCommits(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
+						avgCommits = avgDaysCommits(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome(), numCommits);
+						numDevs = numberModsDevelopers(commits, modelo.getEmail(), modelo.getArquivo(), dataUltima, modelo.getNome());
+						primeiroAutor = primeiroAutor(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
+						doa = calculaDoa(numCommits, numDevs, primeiroAutor);
+					}
+					row.createCell(0).setCellValue(modelo.getNome());
+					row.createCell(1).setCellValue(modelo.getEmail());
+					row.createCell(2).setCellValue(modelo.getArquivo());
+					row.createCell(3).setCellValue(modelo.getFamiliaridade());
+					row.createCell(4).setCellValue(formato.format(modelo.getData()));
+					row.createCell(5).setCellValue(adds);
+					row.createCell(6).setCellValue(dels);
+					row.createCell(7).setCellValue(mods);
+					row.createCell(8).setCellValue(conds);
+					row.createCell(9).setCellValue(montante);
+					if (dataUltima != null) { 
+						String dataFormatada = formato.format(dataUltima);
+						row.createCell(10).setCellValue(dataFormatada);
+						long diff = modelo.getData().getTime() - dataUltima.getTime();
+						diffDias = (int) TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
+					}else {
+						row.createCell(10).setCellValue(dataUltima);
+					}
+					row.createCell(11).setCellValue(numCommits);
+					row.createCell(12).setCellValue(diffDias);
+					row.createCell(13).setCellValue(numDevs);
+					if (blameTotal != null) {
+						row.createCell(14).setCellValue(blameTotal.blame);
+						row.createCell(15).setCellValue(blameTotal.total);
+					}else {
+						row.createCell(14).setCellValue(-1);
+						row.createCell(15).setCellValue(-1);
+					}
+					if (primeiroAutor) {
+						row.createCell(16).setCellValue(1);
+					}else {
+						row.createCell(16).setCellValue(0);
+					}
+					row.createCell(17).setCellValue(doa);
+					if (modelo.getFamiliaridade() >= 3) {
+						row.createCell(18).setCellValue(1);
+					}else {
+						row.createCell(18).setCellValue(0);
+					}
+					row.createCell(19).setCellValue(numeroArquivos);
+					row.createCell(20).setCellValue(avgCommits);
+				}
 			}
-			if (primeiroAutor) {
-				row.createCell(16).setCellValue(1);
-			}else {
-				row.createCell(16).setCellValue(0);
-			}
-			row.createCell(17).setCellValue(doa);
-			if (modelo.getFamiliaridade() >= 3) {
-				row.createCell(18).setCellValue(1);
-			}else {
-				row.createCell(18).setCellValue(0);
-			}
-			row.createCell(19).setCellValue(numeroArquivos);
-			row.createCell(20).setCellValue(avgCommits);
-		}
-		commits = null;
 
-		FileOutputStream fileOut;
-		fileOut = new FileOutputStream(caminhoSaida);
-		workbook.write(fileOut);
-		fileOut.close();
+			FileOutputStream fileOut;
+			fileOut = new FileOutputStream(caminhoSaida);
+			workbook.write(fileOut);
+			fileOut.close();
 
-		try {
-			workbook.close();
-		} catch (IOException e) {
-			e.printStackTrace();
+			try {
+				workbook.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+
+		}		
+	}
+
+	private static List<ModeloOtavio> filesRepo(List<ModeloOtavio> modelos, List<String> lista, List<Revision> revisions) {
+		List<String> listaAux = new ArrayList<String>();
+		List<ModeloOtavio> listaModelos = new ArrayList<ModeloOtavio>();
+		for (int i = 0; i < revisions.size(); i++) {
+				for (int j = 0; j < revisions.get(i).getFiles().size(); j++) {
+					if (lista.contains(revisions.get(i).getFiles().get(j).getPath())
+							&& listaAux.contains(revisions.get(i).getFiles().get(j).getPath()) == false) {
+						listaAux.add(revisions.get(i).getFiles().get(j).getPath());
+					}
+				}
+			}
+		for (ModeloOtavio modeloOtavio : modelos) {
+			if (listaAux.contains(modeloOtavio.getArquivo())) {
+				listaModelos.add(modeloOtavio);
+			}
 		}
-
-		Instant finish = Instant.now();
-		long minutos = Duration.between(start, finish).toMinutes();
-		System.out.println("Quantidade de minutos: "+minutos);
+		return listaModelos;
 	}
 
 	private static double calculaDoa(int numCommits, int numDevs, boolean primeiroAutor) {
