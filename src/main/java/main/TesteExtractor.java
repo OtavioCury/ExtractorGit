@@ -16,6 +16,7 @@ public class TesteExtractor {
 		String answerFile2 = "/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/codivision2.xlsx";
 		List<String> repos1 = new ArrayList<String>();
 		repos1.add("/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/fastlane/fastlane/.git");
+		repos1.add("/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/gatsbyjs/gatsby/.git");
 		List<String> repos2 = new ArrayList<String>();
 		repos2.add("/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/activeadmin/activeadmin/.git");
 		JSONObject jsonObjectCHA = new JSONObject();
