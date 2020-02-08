@@ -1,13 +1,14 @@
 {"projects":{
 	"CHA":{
-		"answer_file":"/media/lost//otavio/testeJSON/codivision1.xlsx",
-		"repos":["/media/lost//otavio/projetos/fastlane/fastlane1/.git",
-				"/media/lost//otavio/projetos/fastlane/fastlane2/.git"],
-		"base_path":"/media/lost//otavio/testeJSON/fastlane.xlsx"},
+		"answer_file":"/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/codivision1.xlsx",
+		"repos":["/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/fastlane/fastlane/.git"],
+		"base_path":"/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/fastlane.xlsx"},
 	"RMCA":{
-		"answer_file":"/media/lost//otavio/testeJSON/codivision2.xlsx",
-		"repos":["/media/lost//otavio/projetos/activeadmin/activeadmin1/.git",
-				"/media/lost//otavio/projetos/activeadmin/activeadmin2/.git"],
-		"base_path":"/media/lost//otavio/testeJSON/activeadmin.xlsx"}
+		"answer_file":"/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/codivision2.xlsx",
+		"repos":["/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/activeadmin/activeadmin/.git"],
+		"base_path":"/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/activeadmin.xlsx"}
 	}
 }
+
+
+{"projects":{"CHA":{"answer_file":"/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/codivision1.xlsx","repos":["/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/fastlane/fastlane/.git","/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/gatsbyjs/gatsby/.git"],"base_path":"/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/fastlane.xlsx"},"RMCA":{"answer_file":"/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/codivision2.xlsx","repos":["/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/projetos/activeadmin/activeadmin/.git"],"base_path":"/media/lost/e04b3034-2506-41c9-a1d4-e3d38fe04256/otavio/testeJSON/activeadmin.xlsx"}}}

@@ -3,7 +3,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.IOException;
+import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -41,8 +43,9 @@ import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.CanonicalTreeParser;
 import org.eclipse.jgit.treewalk.EmptyTreeIterator;
 import org.eclipse.jgit.util.io.DisabledOutputStream;
-import org.json.JSONArray;
-import org.json.JSONObject;
+import org.json.simple.JSONArray;
+import org.json.simple.JSONObject;
+import org.json.simple.parser.JSONParser;
 
 import modelo.Author;
 import modelo.Constants;
@@ -58,29 +61,37 @@ public class Extractor {
 	static String caminhoGit = "pathToGit";
 	static String caminhoRespostas = "pathToFile.xlsx";
 	static String caminhoSaida = "pathToFileOut.xlsx";
-	
+
 	private static String[] columns = {"Nome", "Email", "Arquivo", "Familiaridade", 
 			"Data", "Adds", "Dels", "Mods", "Cond", "Montante","DataUltima", "NumCommits","QuantDias", 
 			"NumDevs", "Blame", "TotalLinhas", "PrimeiroAutor", "DOA", "Mantenedor", "QuantArquivos", "DiasEntreCommits"};
 
-	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException {
-		
-		JSONObject objetoJson = null;
-		if (args != null && args[0] != null) {
-			objetoJson = new JSONObject(args[0]);
+	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, org.json.simple.parser.ParseException {
+
+		JSONParser jsonParser = new JSONParser();
+		JSONObject objetoJson = null; 
+		try{
+			Object obj = jsonParser.parse(new FileReader(args[0]));
+			 
+			objetoJson = (JSONObject) obj;
+
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		}
-		
+
 		JSONObject projetos = (JSONObject) objetoJson.get("projects");
 		JSONObject cha = (JSONObject) projetos.get("CHA");
 		JSONObject rmca = (JSONObject) projetos.get("RMCA");
 		List<JSONObject> projetosArray = new ArrayList<JSONObject>();
 		projetosArray.add(cha);
 		projetosArray.add(rmca);
-		
+
 		SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
-		
+
 		for (JSONObject jsonObject : projetosArray) {
-			
+
 			Workbook workbook = new XSSFWorkbook();
 			Sheet sheet = workbook.createSheet("codiVision");
 			Row headerRow = sheet.createRow(0);
@@ -89,15 +100,15 @@ public class Extractor {
 				cell.setCellValue(columns[i]);
 			}
 			int rowNum = 1;
-			
-			caminhoRespostas = jsonObject.getString("base_path");
-			caminhoSaida = jsonObject.getString("answer_file");
-			
+
+			caminhoRespostas = (String) jsonObject.get("base_path");
+			caminhoSaida = (String) jsonObject.get("answer_file");
+
 			List<String> projetoArquivos = new ArrayList<String>();
 			List<ModeloOtavio> lista = new ArrayList<ModeloOtavio>();
 			projetoAnalisado(lista, projetoArquivos);
-			
-			JSONArray arrayGit = jsonObject.getJSONArray("repos");
+
+			JSONArray arrayGit = (JSONArray) jsonObject.get("repos");
 			List<String> stringGit = new ArrayList<String>();
 			for (Object object : arrayGit) {
 				stringGit.add(object.toString());
@@ -201,13 +212,13 @@ public class Extractor {
 		List<String> listaAux = new ArrayList<String>();
 		List<ModeloOtavio> listaModelos = new ArrayList<ModeloOtavio>();
 		for (int i = 0; i < revisions.size(); i++) {
-				for (int j = 0; j < revisions.get(i).getFiles().size(); j++) {
-					if (lista.contains(revisions.get(i).getFiles().get(j).getPath())
-							&& listaAux.contains(revisions.get(i).getFiles().get(j).getPath()) == false) {
-						listaAux.add(revisions.get(i).getFiles().get(j).getPath());
-					}
+			for (int j = 0; j < revisions.get(i).getFiles().size(); j++) {
+				if (lista.contains(revisions.get(i).getFiles().get(j).getPath())
+						&& listaAux.contains(revisions.get(i).getFiles().get(j).getPath()) == false) {
+					listaAux.add(revisions.get(i).getFiles().get(j).getPath());
 				}
 			}
+		}
 		for (ModeloOtavio modeloOtavio : modelos) {
 			if (listaAux.contains(modeloOtavio.getArquivo())) {
 				listaModelos.add(modeloOtavio);
