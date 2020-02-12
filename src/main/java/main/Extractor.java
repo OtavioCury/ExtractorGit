@@ -136,7 +136,7 @@ public class Extractor {
 					boolean primeiroAutor = false;
 					BlameTotal blameTotal = null;
 					if (commits != null) {
-						blameTotal = blameTotal(modelo.getNome(), modelo.getArquivo(), repository);
+						blameTotal = blameTotal(modelo.getNome(), modelo.getEmail(), modelo.getArquivo(), commits, repository);
 						dataUltima = lastModify(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
 						adds = somaAdd(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
 						dels = somaDel(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
@@ -588,19 +588,20 @@ public class Extractor {
 		return somaAdd;
 	}
 
-	private static BlameTotal blameTotal(String nome, String filePath, Repository repository) throws GitAPIException {
+	private static BlameTotal blameTotal(String nome, String email, String filePath, List<Revision> revisions, Repository repository) throws GitAPIException {
 		int blame = 0, total = 0;
+		List<String> emails = emails(email, revisions, nome);
 		BlameCommand blameCommand = new BlameCommand(repository);
 		blameCommand.setFilePath(filePath);
 		BlameResult blameResult = blameCommand.call();
 		if(blameResult == null) {
-			System.out.println();
+			System.out.println("Erro ao ler Blame");
 		}
 		RawText rawText = blameResult.getResultContents();
 		int length = rawText.size();
 		for (int i = 0; i < length; i++) {
 			PersonIdent autor = blameResult.getSourceAuthor(i);
-			if (autor.getName().equals(nome)) {
+			if (autor.getName().equals(nome) || emails.contains(nome) || emails.contains(autor.getEmailAddress())) {
 				blame++;
 			}
 			total++;
