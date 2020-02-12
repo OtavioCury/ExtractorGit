@@ -71,7 +71,7 @@ public class Extractor {
 		JSONObject objetoJson = null; 
 		try{
 			Object obj = jsonParser.parse(new FileReader(args[0]));
-			 
+
 			objetoJson = (JSONObject) obj;
 
 		} catch (FileNotFoundException e) {
@@ -88,7 +88,6 @@ public class Extractor {
 		projetosArray.add(rmca);
 
 		SimpleDateFormat formato = new SimpleDateFormat("dd/MM/yyyy");
-
 		for (JSONObject jsonObject : projetosArray) {
 
 			Workbook workbook = new XSSFWorkbook();
@@ -118,6 +117,7 @@ public class Extractor {
 				git = Git.open(new File(string));
 				repository = git.getRepository();
 				List<Revision> commits = getRevisions(projetoArquivos, git, repository);
+				System.out.println("Analysing "+string);
 				List<ModeloOtavio> listaRepository = filesRepo(lista, projetoArquivos, commits);
 				for (ModeloOtavio modelo : listaRepository) {
 					Date dataUltima = null;
@@ -205,6 +205,7 @@ public class Extractor {
 			}
 
 		}		
+		System.out.println("\nFinished");
 	}
 
 	private static List<ModeloOtavio> filesRepo(List<ModeloOtavio> modelos, List<String> lista, List<Revision> revisions) {
