@@ -47,6 +47,7 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import modelo.Author;
+import modelo.AutoCRLFComparator;
 import modelo.Constants;
 import modelo.Levenshtein;
 import modelo.ModeloOtavio;
@@ -592,6 +593,7 @@ public class Extractor {
 		int blame = 0, total = 0;
 		List<String> emails = emails(email, revisions, nome);
 		BlameCommand blameCommand = new BlameCommand(repository);
+		blameCommand.setTextComparator(new AutoCRLFComparator());
 		blameCommand.setFilePath(filePath);
 		BlameResult blameResult = blameCommand.call();
 		if(blameResult == null) {
