@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.concurrent.TimeUnit;
 
@@ -47,7 +48,6 @@ import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 
 import modelo.Author;
-import modelo.AutoCRLFComparator;
 import modelo.Constants;
 import modelo.Levenshtein;
 import modelo.ModeloOtavio;
@@ -67,7 +67,7 @@ public class Extractor {
 			"NumDevs", "Blame", "TotalLinhas", "PrimeiroAutor", "DOA", "Mantenedor", "QuantArquivos", "DiasEntreCommits"};
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, org.json.simple.parser.ParseException {
-
+		List<String> arquivosAnalisados = new ArrayList<String>();
 		JSONParser jsonParser = new JSONParser();
 		JSONObject objetoJson = null; 
 		try{
@@ -191,6 +191,81 @@ public class Extractor {
 					}
 					row.createCell(19).setCellValue(numeroArquivos);
 					row.createCell(20).setCellValue(avgCommits);
+					
+					if (arquivosAnalisados.contains(modelo.getArquivo()) == false) {
+						arquivosAnalisados.add(modelo.getArquivo());
+						List<ModeloOtavio> modelos = listaDesenvolvedoresArquivo(modelo.getArquivo(), commits, 
+								modelo.getEmail(), modelo.getNome());
+						for (ModeloOtavio modeloAux: modelos) {
+							row = sheet.createRow(rowNum++);
+							dataUltima = null;
+							adds = -1;
+							dels = -1;
+							mods = -1;
+							conds = -1;
+							numDevs = -1;
+							montante = -1;
+							numCommits = -1;
+							avgCommits = -1;
+							numeroArquivos = numeroOtherFile(commits, modeloAux.getEmail(), modeloAux.getNome());
+							doa = -1.0;
+							primeiroAutor = false;
+							blameTotal = null;
+							if (commits != null) {
+								blameTotal = blameTotal(modeloAux.getNome(), modeloAux.getEmail(), modeloAux.getArquivo(), commits, repository);
+								dataUltima = lastModify(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
+								adds = somaAdd(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
+								dels = somaDel(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
+								mods = somaMod(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
+								conds = somaCond(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
+								montante = somaMontante(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
+								numCommits = numCommits(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
+								avgCommits = avgDaysCommits(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome(), numCommits);
+								numDevs = numberModsDevelopers(commits, modeloAux.getEmail(), modeloAux.getArquivo(), dataUltima, modeloAux.getNome());
+								primeiroAutor = primeiroAutor(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
+								doa = calculaDoa(numCommits, numDevs, primeiroAutor);
+							}
+							row.createCell(0).setCellValue(modeloAux.getNome());
+							row.createCell(1).setCellValue(modeloAux.getEmail());
+							row.createCell(2).setCellValue(modeloAux.getArquivo());
+							row.createCell(3).setCellValue(0);
+							row.createCell(4).setCellValue(-1);
+							row.createCell(5).setCellValue(adds);
+							row.createCell(6).setCellValue(dels);
+							row.createCell(7).setCellValue(mods);
+							row.createCell(8).setCellValue(conds);
+							row.createCell(9).setCellValue(montante);
+							if (dataUltima != null) { 
+								String dataFormatada = formato.format(dataUltima);
+								row.createCell(10).setCellValue(dataFormatada);
+							}else {
+								row.createCell(10).setCellValue(dataUltima);
+							}
+							row.createCell(11).setCellValue(numCommits);
+							row.createCell(12).setCellValue(-1);
+							row.createCell(13).setCellValue(numDevs);
+							if (blameTotal != null) {
+								row.createCell(14).setCellValue(blameTotal.blame);
+								row.createCell(15).setCellValue(blameTotal.total);
+							}else {
+								row.createCell(14).setCellValue(-1);
+								row.createCell(15).setCellValue(-1);
+							}
+							if (primeiroAutor) {
+								row.createCell(16).setCellValue(1);
+							}else {
+								row.createCell(16).setCellValue(0);
+							}
+							row.createCell(17).setCellValue(doa);
+							if (modeloAux.getFamiliaridade() >= 3) {
+								row.createCell(18).setCellValue(1);
+							}else {
+								row.createCell(18).setCellValue(0);
+							}
+							row.createCell(19).setCellValue(numeroArquivos);
+							row.createCell(20).setCellValue(avgCommits);
+						}
+					}
 				}
 			}
 
@@ -208,24 +283,30 @@ public class Extractor {
 		}		
 		System.out.println("\nFinished");
 	}
-
-	private static List<ModeloOtavio> filesRepo(List<ModeloOtavio> modelos, List<String> lista, List<Revision> revisions) {
-		List<String> listaAux = new ArrayList<String>();
-		List<ModeloOtavio> listaModelos = new ArrayList<ModeloOtavio>();
-		for (int i = 0; i < revisions.size(); i++) {
-			for (int j = 0; j < revisions.get(i).getFiles().size(); j++) {
-				if (lista.contains(revisions.get(i).getFiles().get(j).getPath())
-						&& listaAux.contains(revisions.get(i).getFiles().get(j).getPath()) == false) {
-					listaAux.add(revisions.get(i).getFiles().get(j).getPath());
+	
+	private static List<ModeloOtavio> listaDesenvolvedoresArquivo(String arquivo, 
+			List<Revision> commits, String emailRemover, String nomeRemover) {
+		List<String> desenvolvedores = new ArrayList<String>();
+		List<String> desenvolvedoresAlias = new ArrayList<String>();
+		desenvolvedores.add(emailRemover);
+		desenvolvedoresAlias.addAll(emails(emailRemover, commits, nomeRemover));
+		List<ModeloOtavio> modelos = new ArrayList<ModeloOtavio>();
+		for (int i = 0; i < commits.size(); i++) {
+			for (int j = 0; j < commits.get(i).getFiles().size(); j++) {
+				if (commits.get(i).getFiles().get(j).getPath().equals(arquivo)) {
+					String email = commits.get(i).getAuthor().getEmail();
+					String nome = commits.get(i).getAuthor().getName();
+					if(desenvolvedores.contains(email) == false &&
+							desenvolvedoresAlias.contains(email) == false) {
+						desenvolvedores.add(email);
+						desenvolvedoresAlias.addAll(emails(email, commits, nome));
+						ModeloOtavio modelo = new ModeloOtavio(email, nome, arquivo);
+						modelos.add(modelo);
+					}
 				}
 			}
 		}
-		for (ModeloOtavio modeloOtavio : modelos) {
-			if (listaAux.contains(modeloOtavio.getArquivo())) {
-				listaModelos.add(modeloOtavio);
-			}
-		}
-		return listaModelos;
+		return modelos;
 	}
 
 	private static double calculaDoa(int numCommits, int numDevs, boolean primeiroAutor) {
@@ -256,12 +337,37 @@ public class Extractor {
 		}
 	}
 
-	private static List<Revision> getRevisions(List<String> arquivos, Git git, Repository repository) throws NoHeadException, GitAPIException, AmbiguousObjectException, IncorrectObjectTypeException, IOException{
-
+	private static List<Revision> getRevisions(List<String> arquivos, Git git, Repository repository) throws NoHeadException, 
+	GitAPIException, AmbiguousObjectException, IncorrectObjectTypeException, IOException{
+		HashMap<String, List<String>> arquivoRenames = new HashMap<String, List<String>>();
+		for (String arquivo : arquivos) {
+			arquivoRenames.put(arquivo, new ArrayList<String>());
+		}
+		List<RevCommit> listLog = new ArrayList<RevCommit>();
 		Iterable<RevCommit> log = git.log().call();
-		List<Revision> revisions = new ArrayList<Revision>();
+		for (RevCommit jgitCommit: log) {
+			listLog.add(jgitCommit);
+		}
+		for (RevCommit jgitCommit: listLog) {
+			List<DiffEntry> diffsForTheCommit = diffsForTheCommit(repository, jgitCommit);
+			for (DiffEntry diff : diffsForTheCommit) { //verifica se o commit modificou um dos arquivos em análise
+				if (diff.getChangeType().name().equals(Constants.RENAME)) {//verifica se foi um rename
+					String novo = diff.getNewPath();
+					String velho = diff.getOldPath();
+					Iterator<Entry<String, List<String>>> it = arquivoRenames.entrySet().iterator();
+					while (it.hasNext()) {
+						Map.Entry<String, List<String>> pair = (Map.Entry<String, List<String>>) it.next();
+						if((pair.getKey().equals(novo) || pair.getValue().contains(novo))
+								&& pair.getValue().contains(velho) == false) {
+							pair.getValue().add(velho);
+						}
+					}
+				}
+			}
+		}
 		boolean analisa;
-		for (RevCommit jgitCommit: log) { //analisa cada commit
+		List<Revision> revisions = new ArrayList<Revision>();
+		for (RevCommit jgitCommit: listLog) { //analisa cada commit
 			String nome = null, email = null;
 			if (jgitCommit.getAuthorIdent() != null) {
 				if (jgitCommit.getAuthorIdent().getEmailAddress() != null) {
@@ -283,8 +389,13 @@ public class Extractor {
 			for (DiffEntry diff : diffsForTheCommit) { //verifica se o commit modificou um dos arquivos em análise
 				String novo = diff.getNewPath();
 				String velho = diff.getOldPath();
-				if (arquivos.contains(velho) || arquivos.contains(novo)) {
-					analisa = true;
+				Iterator<Entry<String, List<String>>> it = arquivoRenames.entrySet().iterator();
+				while (it.hasNext()) {
+					Map.Entry<String, List<String>> pair = (Map.Entry<String, List<String>>) it.next();
+					if(pair.getKey().equals(novo) || pair.getValue().contains(novo)
+							|| pair.getKey().equals(velho) || pair.getValue().contains(velho)) {
+						analisa = true;			        
+					}
 				}
 			}
 			if (analisa) {
@@ -298,43 +409,47 @@ public class Extractor {
 				for (DiffEntry diff : diffsForTheCommit) {
 					String novo = diff.getNewPath();
 					String velho = diff.getOldPath();
-					if (arquivos.contains(velho) || arquivos.contains(novo)) {
+					Iterator<Entry<String, List<String>>> it = arquivoRenames.entrySet().iterator();
+					while (it.hasNext()) {
+						Map.Entry<String, List<String>> pair = (Map.Entry<String, List<String>>) it.next();
+						if(pair.getKey().equals(novo) || pair.getValue().contains(novo)
+								|| pair.getKey().equals(velho) || pair.getValue().contains(velho)) {
+							OperationFile file = new OperationFile();
+							if(diff.getChangeType().name().equals(Constants.ADD)){
+								file.setOperationType(OperationType.ADD);
+								file.setPath(pair.getKey());
+							}else if(diff.getChangeType().name().equals(Constants.DELETE)){
+								file.setOperationType(OperationType.DEL);
+								file.setPath(pair.getKey());
+							}else if(diff.getChangeType().name().equals(Constants.MODIFY)){
+								file.setOperationType(OperationType.MOD);
+								file.setPath(pair.getKey());
+							}else if(diff.getChangeType().name().equals(Constants.RENAME)) {
+								file.setOperationType(OperationType.REN);
+								file.setPath(pair.getKey());
+							}else{
+								continue;
+							}
 
-						OperationFile file = new OperationFile();
-						if(diff.getChangeType().name().equals(Constants.ADD)){
-							file.setOperationType(OperationType.ADD);
-							file.setPath(novo);
-						}else if(diff.getChangeType().name().equals(Constants.DELETE)){
-							file.setOperationType(OperationType.DEL);
-							file.setPath(velho);
-						}else if(diff.getChangeType().name().equals(Constants.MODIFY)){
-							file.setOperationType(OperationType.MOD);
-							file.setPath(novo);
-						}else if(diff.getChangeType().name().equals(Constants.RENAME)) {
-							file.setOperationType(OperationType.REN);
-							file.setPath(novo);
-						}else{
-							continue;
+							ByteArrayOutputStream stream = new ByteArrayOutputStream();
+							DiffFormatter diffFormatter = new DiffFormatter( stream );
+							diffFormatter.setRepository(repository);
+							diffFormatter.format(diff);
+
+							String in = stream.toString();
+
+							Map<String, Integer> modifications = analyze(in);
+							file.setLineAdd(modifications.get("adds"));
+							file.setLineMod(modifications.get("mods"));
+							file.setLineDel(modifications.get("dels"));
+							file.setLineCondition(modifications.get("conditions"));
+							file.setLinesNumber(file.getLineAdd()+file.getLineDel()+file.getLineMod());
+							file.setExtracted(true);
+							revision.getFiles().add(file);
+
+							diffFormatter.flush();
+							diffFormatter.close();		        
 						}
-
-						ByteArrayOutputStream stream = new ByteArrayOutputStream();
-						DiffFormatter diffFormatter = new DiffFormatter( stream );
-						diffFormatter.setRepository(repository);
-						diffFormatter.format(diff);
-
-						String in = stream.toString();
-
-						Map<String, Integer> modifications = analyze(in);
-						file.setLineAdd(modifications.get("adds"));
-						file.setLineMod(modifications.get("mods"));
-						file.setLineDel(modifications.get("dels"));
-						file.setLineCondition(modifications.get("conditions"));
-						file.setLinesNumber(file.getLineAdd()+file.getLineDel()+file.getLineMod());
-						file.setExtracted(true);
-						revision.getFiles().add(file);
-
-						diffFormatter.flush();
-						diffFormatter.close();
 					}
 				}
 				revision.setTotalFiles(revision.getFiles().size());
@@ -410,6 +525,14 @@ public class Extractor {
 				}
 			}
 		}
+		if (!additions.isEmpty()) {
+			additions.pop();
+			adds++;
+		}
+		if(!deletions.isEmpty()){
+			deletions.pop();
+			dels++;
+		}
 		modifications.put("adds", adds);
 		modifications.put("mods", mods);
 		modifications.put("dels", dels);
@@ -440,6 +563,25 @@ public class Extractor {
 			}
 		}
 		return emails;
+	}
+
+	private static List<ModeloOtavio> filesRepo(List<ModeloOtavio> modelos, List<String> lista, List<Revision> revisions) {
+		List<String> listaAux = new ArrayList<String>();
+		List<ModeloOtavio> listaModelos = new ArrayList<ModeloOtavio>();
+		for (int i = 0; i < revisions.size(); i++) {
+			for (int j = 0; j < revisions.get(i).getFiles().size(); j++) {
+				if (lista.contains(revisions.get(i).getFiles().get(j).getPath())
+						&& listaAux.contains(revisions.get(i).getFiles().get(j).getPath()) == false) {
+					listaAux.add(revisions.get(i).getFiles().get(j).getPath());
+				}
+			}
+		}
+		for (ModeloOtavio modeloOtavio : modelos) {
+			if (listaAux.contains(modeloOtavio.getArquivo())) {
+				listaModelos.add(modeloOtavio);
+			}
+		}
+		return listaModelos;
 	}
 
 	private static void projetoAnalisado(List<ModeloOtavio> lista, List<String> projetoArquivos) {
@@ -588,22 +730,21 @@ public class Extractor {
 		}
 		return somaAdd;
 	}
-
+	
 	private static BlameTotal blameTotal(String nome, String email, String filePath, List<Revision> revisions, Repository repository) throws GitAPIException {
 		int blame = 0, total = 0;
-		List<String> emails = emails(email, revisions, nome);
 		BlameCommand blameCommand = new BlameCommand(repository);
-		blameCommand.setTextComparator(new AutoCRLFComparator());
+		blameCommand.setTextComparator(RawTextComparator.WS_IGNORE_ALL);
 		blameCommand.setFilePath(filePath);
 		BlameResult blameResult = blameCommand.call();
 		if(blameResult == null) {
-			System.out.println("Erro ao ler Blame");
+			System.out.println();
 		}
 		RawText rawText = blameResult.getResultContents();
 		int length = rawText.size();
 		for (int i = 0; i < length; i++) {
 			PersonIdent autor = blameResult.getSourceAuthor(i);
-			if (autor.getName().equals(nome) || emails.contains(nome) || emails.contains(autor.getEmailAddress())) {
+			if (autor.getName().equals(nome)) {
 				blame++;
 			}
 			total++;
