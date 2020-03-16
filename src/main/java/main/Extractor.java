@@ -229,7 +229,7 @@ public class Extractor {
 							row.createCell(1).setCellValue(modeloAux.getEmail());
 							row.createCell(2).setCellValue(modeloAux.getArquivo());
 							row.createCell(3).setCellValue(0);
-							row.createCell(4).setCellValue(-1);
+							row.createCell(4).setCellValue(formato.format(modelo.getData()));
 							row.createCell(5).setCellValue(adds);
 							row.createCell(6).setCellValue(dels);
 							row.createCell(7).setCellValue(mods);
@@ -238,11 +238,13 @@ public class Extractor {
 							if (dataUltima != null) { 
 								String dataFormatada = formato.format(dataUltima);
 								row.createCell(10).setCellValue(dataFormatada);
+								long diff = modelo.getData().getTime() - dataUltima.getTime();
+								diffDias = (int) TimeUnit.DAYS.convert(diff, TimeUnit.MILLISECONDS);
 							}else {
 								row.createCell(10).setCellValue(dataUltima);
 							}
 							row.createCell(11).setCellValue(numCommits);
-							row.createCell(12).setCellValue(-1);
+							row.createCell(12).setCellValue(diffDias);
 							row.createCell(13).setCellValue(numDevs);
 							if (blameTotal != null) {
 								row.createCell(14).setCellValue(blameTotal.blame);
