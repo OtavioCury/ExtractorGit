@@ -45,6 +45,9 @@ public class ModeloOtavio {
 		this.arquivo = arquivo;
 	}
 
+	public ModeloOtavio() {
+		super();
+	}
 
 	public String getEmail() {
 		return email;

@@ -773,20 +773,28 @@ public class Extractor {
 	}
 
 	private static boolean primeiroAutor(List<Revision> revisions, String email, String filePath, String nome) {
-		boolean primeiroAutor = false;
+		ModeloOtavio modeloOtavio = new ModeloOtavio();
 		List<String> emails = emails(email, revisions, nome);
 		for (int i = 0; i < revisions.size(); i++) {
-			if (revisions.get(i).getAuthor().getEmail().equals(email) || 
-					emails.contains(revisions.get(i).getAuthor().getEmail())) {
-				for (int j = 0; j < revisions.get(i).getFiles().size(); j++) {
-					if (revisions.get(i).getFiles().get(j).getPath().equals(filePath) &&
-							revisions.get(i).getFiles().get(j).getOperationType().equals(OperationType.ADD)) {
-						primeiroAutor = true;
+			for (int j = 0; j < revisions.get(i).getFiles().size(); j++) {
+				if (revisions.get(i).getFiles().get(j).getPath().equals(filePath) &&
+						revisions.get(i).getFiles().get(j).getOperationType().equals(OperationType.ADD)) {
+					if (modeloOtavio.getData() == null) {
+						modeloOtavio.setData(revisions.get(i).getDate());
+						modeloOtavio.setEmail(revisions.get(i).getAuthor().getEmail());
+					}else if(modeloOtavio.getData().after(revisions.get(i).getDate())) {
+						modeloOtavio.setData(revisions.get(i).getDate());
+						modeloOtavio.setEmail(revisions.get(i).getAuthor().getEmail());
 					}
 				}
 			}
 		}
-		return primeiroAutor;
+		if((emails != null && emails.contains(modeloOtavio.getEmail())) || 
+				(modeloOtavio.getEmail() != null && modeloOtavio.getEmail().equals(email))) {
+			return true;
+		}else {
+			return false;
+		}
 	}
 
 	private static int somaDel(List<Revision> revisions, String email, String filePath, String nome) {
