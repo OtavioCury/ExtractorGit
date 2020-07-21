@@ -64,7 +64,7 @@ public class Extractor {
 
 	private static String[] columns = {"Nome", "Email", "Arquivo", "Familiaridade", 
 			"Data", "Adds", "Dels", "Mods", "Cond", "Montante","DataUltima", "NumCommits","QuantDias", 
-			"NumDevs", "Blame", "TotalLinhas", "PrimeiroAutor", "DOA", "Mantenedor", "QuantArquivos", "DiasEntreCommits", "Tipo"};
+			"NumDevs", "Blame", "TotalLinhas", "PrimeiroAutor", "DOA", "Mantenedor", "QuantArquivos", "DiasEntreCommits", "AC", "Tipo"};
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, org.json.simple.parser.ParseException {
 		List<String> arquivosAnalisados = new ArrayList<String>();
@@ -193,7 +193,8 @@ public class Extractor {
 					}
 					row.createCell(19).setCellValue(numeroArquivos);
 					row.createCell(20).setCellValue(avgCommits);
-					row.createCell(21).setCellValue("Privado");
+					row.createCell(21).setCellValue(numDevs2);
+					row.createCell(22).setCellValue("Privado");
 					
 					if (arquivosAnalisados.contains(modelo.getArquivo()) == false) {
 						arquivosAnalisados.add(modelo.getArquivo());
@@ -271,7 +272,8 @@ public class Extractor {
 							}
 							row.createCell(19).setCellValue(numeroArquivos);
 							row.createCell(20).setCellValue(avgCommits);
-							row.createCell(21).setCellValue("Privado");
+							row.createCell(21).setCellValue(numDevs2);
+							row.createCell(22).setCellValue("Privado");
 						}
 					}
 				}
