@@ -64,7 +64,7 @@ public class Extractor {
 
 	private static String[] columns = {"Nome", "Email", "Arquivo", "Familiaridade", 
 			"Data", "Adds", "Dels", "Mods", "Cond", "Montante","DataUltima", "NumCommits","QuantDias", 
-			"NumDevs", "Blame", "TotalLinhas", "PrimeiroAutor", "DOA", "Mantenedor", "QuantArquivos", "DiasEntreCommits"};
+			"NumDevs", "Blame", "TotalLinhas", "PrimeiroAutor", "DOA", "Mantenedor", "QuantArquivos", "DiasEntreCommits", "Tipo"};
 
 	public static void main(String[] args) throws IOException, NoHeadException, GitAPIException, org.json.simple.parser.ParseException {
 		List<String> arquivosAnalisados = new ArrayList<String>();
@@ -128,6 +128,7 @@ public class Extractor {
 					int mods = -1;
 					int conds = -1;
 					int numDevs = -1;
+					int numDevs2 = -1;
 					int montante = -1;
 					int numCommits = -1;
 					int diffDias = -1;
@@ -147,8 +148,9 @@ public class Extractor {
 						numCommits = numCommits(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
 						avgCommits = avgDaysCommits(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome(), numCommits);
 						numDevs = numberModsDevelopers(commits, modelo.getEmail(), modelo.getArquivo(), dataUltima, modelo.getNome());
+						numDevs2 = numberModsDevelopers2(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
 						primeiroAutor = primeiroAutor(commits, modelo.getEmail(), modelo.getArquivo(), modelo.getNome());
-						doa = calculaDoa(numCommits, numDevs, primeiroAutor);
+						doa = calculaDoa(numCommits, numDevs2, primeiroAutor);
 					}
 					row.createCell(0).setCellValue(modelo.getNome());
 					row.createCell(1).setCellValue(modelo.getEmail());
@@ -191,6 +193,7 @@ public class Extractor {
 					}
 					row.createCell(19).setCellValue(numeroArquivos);
 					row.createCell(20).setCellValue(avgCommits);
+					row.createCell(21).setCellValue("Privado");
 					
 					if (arquivosAnalisados.contains(modelo.getArquivo()) == false) {
 						arquivosAnalisados.add(modelo.getArquivo());
@@ -204,6 +207,7 @@ public class Extractor {
 							mods = -1;
 							conds = -1;
 							numDevs = -1;
+							numDevs2 = -1;
 							montante = -1;
 							numCommits = -1;
 							avgCommits = -1;
@@ -222,8 +226,9 @@ public class Extractor {
 								numCommits = numCommits(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
 								avgCommits = avgDaysCommits(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome(), numCommits);
 								numDevs = numberModsDevelopers(commits, modeloAux.getEmail(), modeloAux.getArquivo(), dataUltima, modeloAux.getNome());
+								numDevs2 = numberModsDevelopers2(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
 								primeiroAutor = primeiroAutor(commits, modeloAux.getEmail(), modeloAux.getArquivo(), modeloAux.getNome());
-								doa = calculaDoa(numCommits, numDevs, primeiroAutor);
+								doa = calculaDoa(numCommits, numDevs2, primeiroAutor);
 							}
 							row.createCell(0).setCellValue(modeloAux.getNome());
 							row.createCell(1).setCellValue(modeloAux.getEmail());
@@ -266,6 +271,7 @@ public class Extractor {
 							}
 							row.createCell(19).setCellValue(numeroArquivos);
 							row.createCell(20).setCellValue(avgCommits);
+							row.createCell(21).setCellValue("Privado");
 						}
 					}
 				}
@@ -584,6 +590,22 @@ public class Extractor {
 			}
 		}
 		return listaModelos;
+	}
+	
+	private static int numberModsDevelopers2(List<Revision> revisions, String email, String filePath, String nome) {
+		int numMod = 0;
+		List<String> emails = emails(email, revisions, nome);
+		for (int i = 0; i < revisions.size(); i++) {
+			if (!revisions.get(i).getAuthor().getEmail().equals(email) && 
+					emails.contains(revisions.get(i).getAuthor().getEmail()) == false) {
+				for (int j = 0; j < revisions.get(i).getFiles().size(); j++) {
+					if (revisions.get(i).getFiles().get(j).getPath().equals(filePath)) {
+						numMod++;
+					}
+				}
+			}
+		}
+		return numMod;
 	}
 
 	private static void projetoAnalisado(List<ModeloOtavio> lista, List<String> projetoArquivos) {
